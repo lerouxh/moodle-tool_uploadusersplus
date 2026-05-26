@@ -1,0 +1,6 @@
+.path-admin-tool-uploadusersplus input[type="checkbox"],
+#page-admin-setting-tool_uploadusersplus input[type="checkbox"],
+#page-admin-setting-tooluploadusersplus input[type="checkbox"] {
+    border: 2px solid #000;
+    accent-color: #000;
+}

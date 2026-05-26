@@ -1,0 +1,19 @@
+# OS/editor files.
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Runtime/build dependencies that should not be committed.
+node_modules/
+coverage/
+.moodle-plugin-ci/
+.phpunit.result.cache
+.phpunit.cache/
+
+# Logs and local packages.
+*.log
+*.zip
+*.tar.gz
