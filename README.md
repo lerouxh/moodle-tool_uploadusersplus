@@ -37,6 +37,7 @@ Moodle 4.5, 5.0, 5.1, and 5.2
 The Pro version unlocks additional reporting, restriction, and administration features:
 
 - **Processing beyond the free 50-row limit**.
+- **Detailed profile field error reporting** showing profile field name and value issue.
 - **Detailed onscreen results** showing row-level processing information.
 - **Detailed email reports** sent to a selected recipient after successful uploads.
 - **Successful uploads/updates report** showing historical successful upload runs.
