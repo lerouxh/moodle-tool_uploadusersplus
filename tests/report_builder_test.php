@@ -125,6 +125,101 @@ final class tool_uploadusersplus_report_builder_test extends advanced_testcase {
     }
 
     /**
+     * Test profile field row validation messages are masked in the free version.
+     *
+     * @return void
+     */
+    public function test_masks_profile_field_row_validation_messages_in_free_version(): void {
+        $builder = new \tool_uploadusersplus\local\report_builder();
+        $validationresult = $this->get_validation_result_with_messages(12, [[
+            'field' => 'profile_field_region',
+            'fieldlabel' => 'profile_field_region',
+            'text' => 'Invalid custom profile field value for profile_field_region: Atlantis. Expected North, South.',
+            'level' => 'error',
+        ]]);
+
+        $report = $builder->build($validationresult, true);
+        $rowmessage = $report['rowmessages'][0]['html'];
+        $emailtext = $builder->build_email_text($report);
+
+        $this->assertStringContainsString('Line 12:', $rowmessage);
+        $this->assertStringContainsString(
+            get_string('invalidprofilefieldfree', 'tool_uploadusersplus', get_string('proversion', 'tool_uploadusersplus')),
+            strip_tags($rowmessage)
+        );
+        $this->assertStringContainsString('target="_blank"', $rowmessage);
+        $this->assertStringContainsString('rel="noopener noreferrer"', $rowmessage);
+        $this->assertStringNotContainsString('profile_field_region', $rowmessage);
+        $this->assertStringNotContainsString('Atlantis', $rowmessage);
+        $this->assertStringNotContainsString('North', $rowmessage);
+        $this->assertStringNotContainsString('profile_field_region', $emailtext);
+        $this->assertStringNotContainsString('Atlantis', $emailtext);
+        $this->assertStringContainsString('Profile fields', $emailtext);
+        $this->assertStringContainsString(
+            get_string('invalidprofilefieldfree', 'tool_uploadusersplus', get_string('proversion', 'tool_uploadusersplus')),
+            $emailtext
+        );
+    }
+
+    /**
+     * Test mixed row validation messages keep non-profile detail and mask profile detail.
+     *
+     * @return void
+     */
+    public function test_mixed_row_validation_messages_mask_only_profile_field_issues(): void {
+        $builder = new \tool_uploadusersplus\local\report_builder();
+        $validationresult = $this->get_validation_result_with_messages(7, [[
+            'field' => 'email',
+            'fieldlabel' => 'email',
+            'text' => 'Invalid email address.',
+            'level' => 'error',
+        ], [
+            'field' => 'profile_field_region',
+            'fieldlabel' => 'profile_field_region',
+            'text' => 'Invalid profile field value: Atlantis.',
+            'level' => 'error',
+        ]]);
+
+        $report = $builder->build($validationresult, true);
+
+        $this->assertCount(2, $report['rowmessages']);
+        $this->assertSame('Line 7 - email: Invalid email address.', $report['rowmessages'][0]);
+        $this->assertStringContainsString('Line 7:', $report['rowmessages'][1]['html']);
+        $this->assertStringNotContainsString('profile_field_region', $report['rowmessages'][1]['html']);
+        $this->assertStringNotContainsString('Atlantis', $report['rowmessages'][1]['html']);
+    }
+
+    /**
+     * Test repeated profile field row validation messages are collapsed.
+     *
+     * @return void
+     */
+    public function test_multiple_profile_field_row_validation_messages_are_collapsed(): void {
+        $builder = new \tool_uploadusersplus\local\report_builder();
+        $validationresult = $this->get_validation_result_with_messages(9, [[
+            'field' => 'profile_field_region',
+            'fieldlabel' => 'profile_field_region',
+            'text' => 'Invalid profile field value: Atlantis.',
+            'level' => 'error',
+        ], [
+            'field' => 'profile_field_department',
+            'fieldlabel' => 'profile_field_department',
+            'text' => 'Invalid profile field value: Secret.',
+            'level' => 'error',
+        ]]);
+
+        $report = $builder->build($validationresult, true);
+
+        $this->assertCount(1, $report['rowmessages']);
+        $this->assertStringContainsString('Line 9:', $report['rowmessages'][0]['html']);
+        $this->assertStringNotContainsString('profile_field_region', $report['rowmessages'][0]['html']);
+        $this->assertStringNotContainsString('profile_field_department', $report['rowmessages'][0]['html']);
+        $this->assertStringNotContainsString('Atlantis', $report['rowmessages'][0]['html']);
+        $this->assertStringNotContainsString('Secret', $report['rowmessages'][0]['html']);
+        $this->assertCount(1, $report['detailrows'][0]['details']);
+    }
+
+    /**
      * Test non-blocking global messages are included in the report output.
      *
      * @return void
@@ -151,6 +246,36 @@ final class tool_uploadusersplus_report_builder_test extends advanced_testcase {
             get_string('missingrequiredcustomprofilefieldsnotice', 'tool_uploadusersplus'),
             $report['globalmessages']
         );
+    }
+
+    /**
+     * Create a validation result with blocking row messages.
+     *
+     * @param int $line
+     * @param array $messages
+     * @return array
+     */
+    private function get_validation_result_with_messages(int $line, array $messages): array {
+        return [
+            'hasblockingerrors' => true,
+            'globalerrors' => [],
+            'globalmessages' => [],
+            'rows' => [[
+                'line' => $line,
+                'blocking' => true,
+                'messages' => $messages,
+                'username' => 'student' . $line,
+                'statuslabel' => get_string('status_invalid', 'tool_uploadusersplus'),
+                'actionlabel' => get_string('action_none', 'tool_uploadusersplus'),
+            ]],
+            'summary' => [
+                'rowsread' => 1,
+                'validrows' => 0,
+                'invalidrows' => 1,
+                'newusersdetected' => 0,
+                'existingusersdetected' => 0,
+            ],
+        ];
     }
 
     /**

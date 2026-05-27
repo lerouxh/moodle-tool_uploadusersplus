@@ -198,6 +198,10 @@ class renderer extends \plugin_renderer_base {
         if (!empty($report['rowmessages'])) {
             $messageitems = [];
             foreach ($report['rowmessages'] as $message) {
+                if (is_array($message) && array_key_exists('html', $message)) {
+                    $messageitems[] = \html_writer::tag('li', $message['html']);
+                    continue;
+                }
                 $messageitems[] = \html_writer::tag('li', s($message));
             }
             $rowmessages = \html_writer::tag('h4', get_string('rowvalidationissues', 'tool_uploadusersplus'))

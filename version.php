@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'tool_uploadusersplus';
-$plugin->version = 2026052601;
+$plugin->version = 2026052602;
 $plugin->requires = 2024100700;
 $plugin->maturity = MATURITY_STABLE;
 $plugin->release = '1.0';

@@ -62,23 +62,13 @@ class report_builder {
         if (!empty($importresult['rows'])) {
             $details = $importresult['rows'];
         }
+        if (helper::is_free_version()) {
+            $details = $this->mask_profile_field_messages_in_rows($details);
+        }
         $detailcolumns = $this->get_detail_columns($settings);
         $detailrows = $this->build_detail_rows($details, $settings, $dryrun);
 
-        $rowmessages = [];
-        foreach ($details as $row) {
-            if (empty($row['blocking'])) {
-                continue;
-            }
-
-            foreach ($row['messages'] as $message) {
-                $rowmessages[] = get_string('rowvalidationissue', 'tool_uploadusersplus', (object)[
-                    'line' => $row['line'],
-                    'field' => $message['fieldlabel'],
-                    'message' => $message['text'],
-                ]);
-            }
-        }
+        $rowmessages = $this->build_row_validation_messages($details);
 
         $showsuccessmessage = false;
         if (!$dryrun && !$validationresult['hasblockingerrors'] && empty($importresult['rolledback'])) {
@@ -96,11 +86,11 @@ class report_builder {
             'summary' => $summary,
             'processinglimited' => !empty($validationresult['processinglimited']),
             'processinglimit' => (int)($validationresult['processinglimit'] ?? helper::get_free_row_processing_limit()),
-            'globalmessages' => array_merge(
+            'globalmessages' => $this->mask_profile_field_global_messages(array_merge(
                 $validationresult['globalmessages'] ?? [],
                 $validationresult['globalerrors'],
                 $importresult['globalmessages'] ?? []
-            ),
+            )),
             'rowmessages' => $rowmessages,
             'details' => $details,
             'detailcolumns' => $detailcolumns,
@@ -141,6 +131,149 @@ class report_builder {
         }
 
         return implode("\n", $lines) . "\n";
+    }
+
+    /**
+     * Build row validation issue messages for summary output.
+     *
+     * @param array $details
+     * @return array
+     */
+    protected function build_row_validation_messages(array $details): array {
+        $rowmessages = [];
+
+        foreach ($details as $row) {
+            if (empty($row['blocking'])) {
+                continue;
+            }
+
+            $profilemessageadded = false;
+            foreach ($row['messages'] as $message) {
+                if (helper::is_free_version() && $this->is_profile_field_message($message)) {
+                    if ($profilemessageadded) {
+                        continue;
+                    }
+
+                    $rowmessages[] = [
+                        'html' => get_string('rowvalidationissueprofilefieldfree', 'tool_uploadusersplus', (object)[
+                            'line' => $row['line'],
+                            'message' => $this->get_profile_field_free_message(true),
+                        ]),
+                    ];
+                    $profilemessageadded = true;
+                    continue;
+                }
+
+                $rowmessages[] = get_string('rowvalidationissue', 'tool_uploadusersplus', (object)[
+                    'line' => $row['line'],
+                    'field' => $message['fieldlabel'],
+                    'message' => $message['text'],
+                ]);
+            }
+        }
+
+        return $rowmessages;
+    }
+
+    /**
+     * Mask profile-field messages in row data for free-version display paths.
+     *
+     * @param array $rows
+     * @return array
+     */
+    protected function mask_profile_field_messages_in_rows(array $rows): array {
+        foreach ($rows as &$row) {
+            if (empty($row['messages'])) {
+                continue;
+            }
+
+            $maskedmessages = [];
+            $profilemessageadded = false;
+            foreach ($row['messages'] as $message) {
+                if (!$this->is_profile_field_message($message)) {
+                    $maskedmessages[] = $message;
+                    continue;
+                }
+
+                if ($profilemessageadded) {
+                    continue;
+                }
+
+                $message['field'] = 'profilefields';
+                $message['fieldlabel'] = get_string('profilefields', 'tool_uploadusersplus');
+                $message['text'] = $this->get_profile_field_free_message(false);
+                $message['profilefieldmasked'] = true;
+                $maskedmessages[] = $message;
+                $profilemessageadded = true;
+            }
+
+            $row['messages'] = $maskedmessages;
+        }
+        unset($row);
+
+        return $rows;
+    }
+
+    /**
+     * Mask exact profile-field global messages in free-version report data.
+     *
+     * @param array $messages
+     * @return array
+     */
+    protected function mask_profile_field_global_messages(array $messages): array {
+        if (!helper::is_free_version()) {
+            return $messages;
+        }
+
+        $masked = [];
+        $profilemessageadded = false;
+        $unknownprofileprefix = get_string('warning_unknownprofiledatatypevalidationskipped_prefix', 'tool_uploadusersplus');
+
+        foreach ($messages as $message) {
+            if (strpos((string)$message, $unknownprofileprefix) !== 0) {
+                $masked[] = $message;
+                continue;
+            }
+
+            if ($profilemessageadded) {
+                continue;
+            }
+
+            $masked[] = $this->get_profile_field_free_message(false);
+            $profilemessageadded = true;
+        }
+
+        return $masked;
+    }
+
+    /**
+     * Determine whether a row message belongs to a custom profile field.
+     *
+     * @param array $message
+     * @return bool
+     */
+    protected function is_profile_field_message(array $message): bool {
+        if (!empty($message['profilefieldmasked'])) {
+            return true;
+        }
+
+        $field = (string)($message['field'] ?? $message['fieldlabel'] ?? '');
+
+        return strpos($field, 'profile_field_') === 0;
+    }
+
+    /**
+     * Get the free-version profile-field masking message.
+     *
+     * @param bool $html
+     * @return string
+     */
+    protected function get_profile_field_free_message(bool $html): string {
+        $proversion = $html
+            ? helper::get_pro_purchase_link(get_string('proversion', 'tool_uploadusersplus'))
+            : get_string('proversion', 'tool_uploadusersplus');
+
+        return get_string('invalidprofilefieldfree', 'tool_uploadusersplus', $proversion);
     }
 
     /**
