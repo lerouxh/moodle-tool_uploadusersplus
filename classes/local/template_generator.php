@@ -43,6 +43,12 @@ class template_generator {
      * @param int $numberofcohorts
      * @param bool $courseenrolments
      * @param bool $cohortenrolments
+     * @param bool $includerolefields
+     * @param bool $includeenroltimestart
+     * @param bool $includeenrolperiod
+     * @param bool $includeenrolstatus
+     * @param bool $includedeletedfield
+     * @param bool $includesuspendedfield
      * @return array
      */
     public function build_headers(
@@ -51,9 +57,26 @@ class template_generator {
         int $numberofcourses,
         int $numberofcohorts,
         bool $courseenrolments,
-        bool $cohortenrolments
+        bool $cohortenrolments,
+        bool $includerolefields = false,
+        bool $includeenroltimestart = false,
+        bool $includeenrolperiod = false,
+        bool $includeenrolstatus = false,
+        bool $includedeletedfield = false,
+        bool $includesuspendedfield = false
     ): array {
         $headers = helper::get_template_default_headers();
+        $accountstatusheaders = [];
+
+        if ($includedeletedfield) {
+            $accountstatusheaders[] = 'deleted';
+        }
+        if ($includesuspendedfield) {
+            $accountstatusheaders[] = 'suspended';
+        }
+        if (!empty($accountstatusheaders)) {
+            array_splice($headers, 1, 0, $accountstatusheaders);
+        }
 
         if ($includecustomprofilefields) {
             $headers = array_merge($headers, array_keys(helper::get_template_custom_profile_fields()));
@@ -66,6 +89,18 @@ class template_generator {
         if ($courseenrolments) {
             for ($i = 1; $i <= $numberofcourses; $i++) {
                 $headers[] = 'course' . $i;
+                if ($includerolefields) {
+                    $headers[] = 'role' . $i;
+                }
+                if ($includeenroltimestart) {
+                    $headers[] = 'enroltimestart' . $i;
+                }
+                if ($includeenrolperiod) {
+                    $headers[] = 'enrolperiod' . $i;
+                }
+                if ($includeenrolstatus) {
+                    $headers[] = 'enrolstatus' . $i;
+                }
                 $headers[] = 'group' . $i;
             }
         }

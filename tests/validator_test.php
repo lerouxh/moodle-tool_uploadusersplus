@@ -271,4 +271,57 @@ final class tool_uploadusersplus_validator_test extends advanced_testcase {
         $this->assertSame($limit, $result['summary']['validrows']);
         $this->assertSame('user' . $limit, $result['rows'][$limit - 1]['username']);
     }
+
+    /**
+     * Test Moodle enrolment detail and account-status headers are accepted and validated.
+     *
+     * @return void
+     */
+    public function test_core_enrolment_detail_and_account_status_headers_validate(): void {
+        $this->resetAfterTest();
+        $this->getDataGenerator()->create_course(['shortname' => 'COURSE1']);
+        $formdata = (object)[
+            'uploadtype' => \tool_uploadusersplus\local\helper::UPLOADTYPE_ADDNEW,
+            'newpasswords' => \tool_uploadusersplus\local\helper::NEWPASSWORDS_CREATE,
+            'existingpasswords' => \tool_uploadusersplus\local\helper::EXISTINGPASSWORDS_NOCHANGES,
+            'dryrun' => 1,
+        ];
+        $content = "username,firstname,lastname,email,deleted,suspended,course1,role1,enroltimestart1,enrolperiod1,enrolstatus1\n"
+            . "alice,Alice,Smith,alice@example.com,0,1,COURSE1,student,2021-02-15 15:30,0,1\n";
+
+        $validator = new \tool_uploadusersplus\local\validator();
+        $result = $validator->validate($content, $formdata);
+
+        $this->assertFalse($result['hasblockingerrors']);
+    }
+
+    /**
+     * Test invalid values in Moodle enrolment detail and account-status headers are blocking.
+     *
+     * @return void
+     */
+    public function test_core_enrolment_detail_and_account_status_headers_reject_invalid_values(): void {
+        $this->resetAfterTest();
+        $this->getDataGenerator()->create_course(['shortname' => 'COURSE1']);
+        $formdata = (object)[
+            'uploadtype' => \tool_uploadusersplus\local\helper::UPLOADTYPE_ADDNEW,
+            'newpasswords' => \tool_uploadusersplus\local\helper::NEWPASSWORDS_CREATE,
+            'existingpasswords' => \tool_uploadusersplus\local\helper::EXISTINGPASSWORDS_NOCHANGES,
+            'dryrun' => 1,
+        ];
+        $content = "username,firstname,lastname,email,deleted,suspended,course1,role1,enroltimestart1,enrolperiod1,enrolstatus1\n"
+            . "alice,Alice,Smith,alice@example.com,2,yes,COURSE1,notarole,2021-15-99,-1,5\n";
+
+        $validator = new \tool_uploadusersplus\local\validator();
+        $result = $validator->validate($content, $formdata);
+        $messages = array_column($result['rows'][0]['messages'], 'text');
+
+        $this->assertTrue($result['hasblockingerrors']);
+        $this->assertContains(get_string('error_invaliddeleted', 'tool_uploadusersplus'), $messages);
+        $this->assertContains(get_string('error_invalidsuspended', 'tool_uploadusersplus'), $messages);
+        $this->assertContains(get_string('error_invalidrole', 'tool_uploadusersplus'), $messages);
+        $this->assertContains(get_string('error_invalidenroltimestart', 'tool_uploadusersplus'), $messages);
+        $this->assertContains(get_string('error_invalidenrolperiod', 'tool_uploadusersplus'), $messages);
+        $this->assertContains(get_string('error_invalidenrolstatus', 'tool_uploadusersplus'), $messages);
+    }
 }

@@ -24,8 +24,14 @@ const templateFields = [
     'includeoptionalfields',
     'courseenrolments',
     'numberofcourses',
+    'includerolefields',
+    'includeenroltimestart',
+    'includeenrolperiod',
+    'includeenrolstatus',
     'cohortenrolments',
-    'numberofcohorts'
+    'numberofcohorts',
+    'includedeletedfield',
+    'includesuspendedfield'
 ];
 
 const getFieldContainer = node => {

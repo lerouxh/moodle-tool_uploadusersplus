@@ -118,7 +118,7 @@ class helper {
      * @return array
      */
     public static function get_supported_standard_headers(): array {
-        return ['username', 'password', 'firstname', 'lastname', 'email'];
+        return ['username', 'password', 'firstname', 'lastname', 'email', 'deleted', 'suspended'];
     }
 
     /**
@@ -311,8 +311,14 @@ class helper {
         $data->includeoptionalfields = 0;
         $data->courseenrolments = 0;
         $data->numberofcourses = 1;
+        $data->includerolefields = 0;
+        $data->includeenroltimestart = 0;
+        $data->includeenrolperiod = 0;
+        $data->includeenrolstatus = 0;
         $data->cohortenrolments = 0;
         $data->numberofcohorts = 1;
+        $data->includedeletedfield = 0;
+        $data->includesuspendedfield = 0;
         $data->uploadtype = self::UPLOADTYPE_ADDNEW;
         $data->newpasswords = self::NEWPASSWORDS_CREATE;
         $data->existingpasswords = self::EXISTINGPASSWORDS_NOCHANGES;
@@ -335,7 +341,13 @@ class helper {
         $settings->hidecustomprofilefieldsoption = !empty($config->hidecustomprofilefieldsoption);
         $settings->hideoptionalfieldsoption = !empty($config->hideoptionalfieldsoption);
         $settings->hidecourseenrolmentsoption = !empty($config->hidecourseenrolmentsoption);
+        $settings->hideoptionroleenrolments = !empty($config->hideoptionroleenrolments);
+        $settings->hideoptionenroltimestart = !empty($config->hideoptionenroltimestart);
+        $settings->hideoptionenrolperiod = !empty($config->hideoptionenrolperiod);
+        $settings->hideoptionenrolstatus = !empty($config->hideoptionenrolstatus);
         $settings->hidecohortenrolmentsoption = !empty($config->hidecohortenrolmentsoption);
+        $settings->hideoptiondeletedfield = !empty($config->hideoptiondeletedfield);
+        $settings->hideoptionsuspendedfield = !empty($config->hideoptionsuspendedfield);
         $settings->enrolmentrestrictions = !empty($config->enrolmentrestrictions);
         $settings->siteadminreportsonly = !empty($config->siteadminreportsonly);
         $settings->displayuseridindetailedreports = !empty($config->displayuseridindetailedreports);
@@ -455,15 +467,37 @@ class helper {
         $normalised->courseenrolments = $settings->hidecourseenrolmentsoption
             ? 0
             : (int)!empty($normalised->courseenrolments);
+        $normalised->includerolefields = $settings->hideoptionroleenrolments
+            ? 0
+            : (int)!empty($normalised->includerolefields);
+        $normalised->includeenroltimestart = $settings->hideoptionenroltimestart
+            ? 0
+            : (int)!empty($normalised->includeenroltimestart);
+        $normalised->includeenrolperiod = $settings->hideoptionenrolperiod
+            ? 0
+            : (int)!empty($normalised->includeenrolperiod);
+        $normalised->includeenrolstatus = $settings->hideoptionenrolstatus
+            ? 0
+            : (int)!empty($normalised->includeenrolstatus);
         $normalised->cohortenrolments = $settings->hidecohortenrolmentsoption
             ? 0
             : (int)!empty($normalised->cohortenrolments);
+        $normalised->includedeletedfield = $settings->hideoptiondeletedfield
+            ? 0
+            : (int)!empty($normalised->includedeletedfield);
+        $normalised->includesuspendedfield = $settings->hideoptionsuspendedfield
+            ? 0
+            : (int)!empty($normalised->includesuspendedfield);
 
         $normalised->numberofcourses = self::is_valid_int_in_range($normalised->numberofcourses ?? '', 1, 99)
             ? (int)$normalised->numberofcourses
             : 1;
         if (empty($normalised->courseenrolments)) {
             $normalised->numberofcourses = 1;
+            $normalised->includerolefields = 0;
+            $normalised->includeenroltimestart = 0;
+            $normalised->includeenrolperiod = 0;
+            $normalised->includeenrolstatus = 0;
         }
 
         $normalised->numberofcohorts = self::is_valid_int_in_range($normalised->numberofcohorts ?? '', 1, 10)
@@ -673,6 +707,60 @@ class helper {
      */
     public static function is_group_header(string $header): bool {
         return (bool)preg_match('/^group([1-9][0-9]?)$/', $header);
+    }
+
+    /**
+     * Determine whether a header is a course role column.
+     *
+     * @param string $header
+     * @return bool
+     */
+    public static function is_role_header(string $header): bool {
+        return (bool)preg_match('/^role([1-9][0-9]?)$/', $header);
+    }
+
+    /**
+     * Determine whether a header is an enrolment start date column.
+     *
+     * @param string $header
+     * @return bool
+     */
+    public static function is_enroltimestart_header(string $header): bool {
+        return (bool)preg_match('/^enroltimestart([1-9][0-9]?)$/', $header);
+    }
+
+    /**
+     * Determine whether a header is an enrolment period column.
+     *
+     * @param string $header
+     * @return bool
+     */
+    public static function is_enrolperiod_header(string $header): bool {
+        return (bool)preg_match('/^enrolperiod([1-9][0-9]?)$/', $header);
+    }
+
+    /**
+     * Determine whether a header is an enrolment status column.
+     *
+     * @param string $header
+     * @return bool
+     */
+    public static function is_enrolstatus_header(string $header): bool {
+        return (bool)preg_match('/^enrolstatus([1-9][0-9]?)$/', $header);
+    }
+
+    /**
+     * Determine whether a header is a course enrolment detail column.
+     *
+     * @param string $header
+     * @return bool
+     */
+    public static function is_course_enrolment_detail_header(string $header): bool {
+        return self::is_group_header($header)
+            || self::is_role_header($header)
+            || self::is_enroltimestart_header($header)
+            || self::is_enrolperiod_header($header)
+            || self::is_enrolstatus_header($header);
     }
 
     /**

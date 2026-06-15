@@ -81,6 +81,57 @@ final class tool_uploadusersplus_template_generator_test extends advanced_testca
     }
 
     /**
+     * Test advanced enrolment and account-status headers are generated in the expected order.
+     *
+     * @return void
+     */
+    public function test_build_headers_includes_advanced_enrolment_and_account_status_fields(): void {
+        $this->resetAfterTest();
+
+        $templategenerator = new \tool_uploadusersplus\local\template_generator();
+        $headers = $templategenerator->build_headers(
+            false,
+            false,
+            2,
+            1,
+            true,
+            false,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+        );
+
+        $this->assertSame('username', $headers[0]);
+        $this->assertSame('deleted', $headers[1]);
+        $this->assertSame('suspended', $headers[2]);
+        $this->assertContains('role1', $headers);
+        $this->assertContains('enroltimestart1', $headers);
+        $this->assertContains('enrolperiod1', $headers);
+        $this->assertContains('enrolstatus1', $headers);
+        $this->assertContains('role2', $headers);
+        $this->assertSame(
+            [
+                'course1',
+                'role1',
+                'enroltimestart1',
+                'enrolperiod1',
+                'enrolstatus1',
+                'group1',
+                'course2',
+                'role2',
+                'enroltimestart2',
+                'enrolperiod2',
+                'enrolstatus2',
+                'group2',
+            ],
+            array_slice($headers, -12)
+        );
+    }
+
+    /**
      * Test only configured custom profile fields are included in generated templates.
      *
      * @return void

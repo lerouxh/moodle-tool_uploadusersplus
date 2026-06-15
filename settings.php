@@ -132,9 +132,57 @@ if ($hassiteconfig) {
     ));
 
     $settings->add(new admin_setting_configcheckbox(
+        'tool_uploadusersplus/hideoptionroleenrolments',
+        get_string('setting_hideoptionroleenrolments', 'tool_uploadusersplus'),
+        get_string('setting_hideoptionroleenrolments_desc', 'tool_uploadusersplus'),
+        0
+    ));
+
+    $settings->add(new admin_setting_configcheckbox(
+        'tool_uploadusersplus/hideoptionenroltimestart',
+        get_string('setting_hideoptionenroltimestart', 'tool_uploadusersplus'),
+        get_string('setting_hideoptionenroltimestart_desc', 'tool_uploadusersplus'),
+        0
+    ));
+
+    $settings->add(new admin_setting_configcheckbox(
+        'tool_uploadusersplus/hideoptionenrolperiod',
+        get_string('setting_hideoptionenrolperiod', 'tool_uploadusersplus'),
+        get_string('setting_hideoptionenrolperiod_desc', 'tool_uploadusersplus'),
+        0
+    ));
+
+    $settings->add(new admin_setting_configcheckbox(
+        'tool_uploadusersplus/hideoptionenrolstatus',
+        get_string('setting_hideoptionenrolstatus', 'tool_uploadusersplus'),
+        get_string('setting_hideoptionenrolstatus_desc', 'tool_uploadusersplus'),
+        0
+    ));
+
+    $settings->add(new admin_setting_configcheckbox(
         'tool_uploadusersplus/hidecohortenrolmentsoption',
         get_string('setting_hidecohortenrolmentsoption', 'tool_uploadusersplus'),
         get_string('setting_hidecohortenrolmentsoption_desc', 'tool_uploadusersplus'),
+        0
+    ));
+
+    $settings->add(new admin_setting_heading(
+        'tool_uploadusersplus/deletesuspendheading',
+        get_string('settingsdeletesuspend', 'tool_uploadusersplus'),
+        ''
+    ));
+
+    $settings->add(new admin_setting_configcheckbox(
+        'tool_uploadusersplus/hideoptiondeletedfield',
+        get_string('setting_hideoptiondeletedfield', 'tool_uploadusersplus'),
+        get_string('setting_hideoptiondeletedfield_desc', 'tool_uploadusersplus'),
+        0
+    ));
+
+    $settings->add(new admin_setting_configcheckbox(
+        'tool_uploadusersplus/hideoptionsuspendedfield',
+        get_string('setting_hideoptionsuspendedfield', 'tool_uploadusersplus'),
+        get_string('setting_hideoptionsuspendedfield_desc', 'tool_uploadusersplus'),
         0
     ));
 

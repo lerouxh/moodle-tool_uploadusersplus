@@ -189,7 +189,7 @@ class validator {
             $valid = in_array($header, $acceptedstandard, true)
                 || array_key_exists($header, $customfields)
                 || helper::is_course_header($header)
-                || helper::is_group_header($header)
+                || helper::is_course_enrolment_detail_header($header)
                 || helper::is_cohort_header($header);
 
             if (!$valid) {
@@ -212,7 +212,7 @@ class validator {
         }
 
         foreach ($normalised as $header) {
-            if (helper::is_group_header($header)) {
+            if (helper::is_course_enrolment_detail_header($header)) {
                 $index = helper::get_index_from_header($header);
                 if (!in_array('course' . $index, $normalised, true)) {
                     $errors[] = get_string('error_missingrequiredheader', 'tool_uploadusersplus', 'course' . $index);
@@ -404,6 +404,12 @@ class validator {
             }
         }
 
+        foreach (['deleted' => 'error_invaliddeleted', 'suspended' => 'error_invalidsuspended'] as $field => $stringkey) {
+            if (array_key_exists($field, $assoc)) {
+                $this->validate_choice_field($field, $assoc[$field], ['', '0', '1'], $messages, $stringkey);
+            }
+        }
+
         if (isset($prepared['user']['email']) && $prepared['user']['email'] !== '') {
             $emailowner = $DB->get_record('user', ['email' => $prepared['user']['email'], 'deleted' => 0], 'id, email');
             if ($emailowner && (!$existinguser || (int)$emailowner->id !== (int)$existinguser->id) && empty($CFG->allowaccountssameemail)) {
@@ -487,14 +493,49 @@ class validator {
             $index = helper::get_index_from_header($header);
             $coursevalue = trim($assoc['course' . $index] ?? '');
             $groupvalue = trim($assoc['group' . $index] ?? '');
+            $rolevalue = trim($assoc['role' . $index] ?? '');
+            $enroltimestartvalue = trim($assoc['enroltimestart' . $index] ?? '');
+            $enrolperiodvalue = trim($assoc['enrolperiod' . $index] ?? '');
+            $enrolstatusvalue = trim($assoc['enrolstatus' . $index] ?? '');
 
-            if ($coursevalue === '' && $groupvalue === '') {
+            if ($coursevalue === '' && $groupvalue === '' && $rolevalue === ''
+                    && $enroltimestartvalue === '' && $enrolperiodvalue === '' && $enrolstatusvalue === '') {
                 continue;
             }
 
             if ($coursevalue === '') {
-                $messages[] = $this->create_message('group' . $index, get_string('error_groupwithoutcourse', 'tool_uploadusersplus'));
+                if ($groupvalue !== '') {
+                    $messages[] = $this->create_message(
+                        'group' . $index,
+                        get_string('error_groupwithoutcourse', 'tool_uploadusersplus')
+                    );
+                    continue;
+                }
+                $field = $this->get_first_nonempty_enrolment_detail_field($assoc, $index);
+                $messages[] = $this->create_message(
+                    $field,
+                    get_string('error_coursefieldwithoutcourse', 'tool_uploadusersplus')
+                );
                 continue;
+            }
+
+            if ($rolevalue !== '') {
+                $this->validate_role_value($rolevalue, $messages, 'role' . $index);
+            }
+            if ($enroltimestartvalue !== '') {
+                $this->validate_enroltimestart_value($enroltimestartvalue, $messages, 'enroltimestart' . $index);
+            }
+            if ($enrolperiodvalue !== '') {
+                $this->validate_non_negative_integer_value($enrolperiodvalue, $messages, 'enrolperiod' . $index, 'error_invalidenrolperiod');
+            }
+            if ($enrolstatusvalue !== '') {
+                $this->validate_choice_field(
+                    'enrolstatus' . $index,
+                    $enrolstatusvalue,
+                    ['0', '1'],
+                    $messages,
+                    'error_invalidenrolstatus'
+                );
             }
 
             $resolvedcourse = $this->resolver->resolve_course($coursevalue);
@@ -784,6 +825,93 @@ class validator {
         }
 
         return false;
+    }
+
+    /**
+     * Get the first supplied enrolment detail field for a course index.
+     *
+     * @param array $assoc
+     * @param int $index
+     * @return string
+     */
+    protected function get_first_nonempty_enrolment_detail_field(array $assoc, int $index): string {
+        foreach (['role', 'enroltimestart', 'enrolperiod', 'enrolstatus'] as $prefix) {
+            $field = $prefix . $index;
+            if (trim($assoc[$field] ?? '') !== '') {
+                return $field;
+            }
+        }
+
+        return 'course' . $index;
+    }
+
+    /**
+     * Validate an enrolment role value.
+     *
+     * @param string $value
+     * @param array $messages
+     * @param string $field
+     * @return void
+     */
+    protected function validate_role_value(string $value, array &$messages, string $field): void {
+        global $DB;
+
+        if (ctype_digit($value)) {
+            if (!$DB->record_exists('role', ['id' => (int)$value])) {
+                $messages[] = $this->create_message($field, get_string('error_invalidrole', 'tool_uploadusersplus'));
+            }
+            return;
+        }
+
+        if (!$DB->record_exists('role', ['shortname' => $value])) {
+            $messages[] = $this->create_message($field, get_string('error_invalidrole', 'tool_uploadusersplus'));
+        }
+    }
+
+    /**
+     * Validate an enrolment start date value.
+     *
+     * @param string $value
+     * @param array $messages
+     * @param string $field
+     * @return void
+     */
+    protected function validate_enroltimestart_value(string $value, array &$messages, string $field): void {
+        $pattern = '/^(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})(?: (?<hour>\d{2}):(?<minute>\d{2})(?::(?<second>\d{2}))?)?$/';
+        if (!preg_match($pattern, $value, $matches)) {
+            $messages[] = $this->create_message($field, get_string('error_invalidenroltimestart', 'tool_uploadusersplus'));
+            return;
+        }
+
+        if (!checkdate((int)$matches['month'], (int)$matches['day'], (int)$matches['year'])) {
+            $messages[] = $this->create_message($field, get_string('error_invalidenroltimestart', 'tool_uploadusersplus'));
+            return;
+        }
+
+        if (isset($matches['hour']) && ((int)$matches['hour'] > 23 || (int)$matches['minute'] > 59
+                || (isset($matches['second']) && (int)$matches['second'] > 59))) {
+            $messages[] = $this->create_message($field, get_string('error_invalidenroltimestart', 'tool_uploadusersplus'));
+        }
+    }
+
+    /**
+     * Validate a non-negative integer field.
+     *
+     * @param string $value
+     * @param array $messages
+     * @param string $field
+     * @param string $stringkey
+     * @return void
+     */
+    protected function validate_non_negative_integer_value(
+        string $value,
+        array &$messages,
+        string $field,
+        string $stringkey
+    ): void {
+        if (!preg_match('/^\d+$/', $value)) {
+            $messages[] = $this->create_message($field, get_string($stringkey, 'tool_uploadusersplus'));
+        }
     }
 
     /**

@@ -70,6 +70,7 @@ class main_form extends \moodleform {
                         'data-template-field' => 'includecustomprofilefields',
                     ]);
                     $mform->setType('includecustomprofilefields', PARAM_BOOL);
+                    $mform->addHelpButton('includecustomprofilefields', 'includecustomprofilefields', 'tool_uploadusersplus');
                 }
 
                 if (empty($settings->hideoptionalfieldsoption)) {
@@ -82,6 +83,7 @@ class main_form extends \moodleform {
                         'data-template-field' => 'includeoptionalfields',
                     ]);
                     $mform->setType('includeoptionalfields', PARAM_BOOL);
+                    $mform->addHelpButton('includeoptionalfields', 'includeoptionalfields', 'tool_uploadusersplus');
                 }
             }
 
@@ -100,6 +102,7 @@ class main_form extends \moodleform {
                         'data-template-field' => 'courseenrolments',
                     ]);
                     $mform->setType('courseenrolments', PARAM_BOOL);
+                    $mform->addHelpButton('courseenrolments', 'courseenrolments', 'tool_uploadusersplus');
 
                     $numberofcourseselement = $mform->addElement(
                         'text',
@@ -112,6 +115,63 @@ class main_form extends \moodleform {
                     ]);
                     $mform->setType('numberofcourses', PARAM_INT);
                     $mform->hideIf('numberofcourses', 'courseenrolments', 'notchecked');
+                    $mform->addHelpButton('numberofcourses', 'numberofcourses', 'tool_uploadusersplus');
+
+                    if (empty($settings->hideoptionroleenrolments)) {
+                        $rolefieldselement = $mform->addElement(
+                            'advcheckbox',
+                            'includerolefields',
+                            get_string('includerolefields', 'tool_uploadusersplus')
+                        );
+                        $rolefieldselement->updateAttributes([
+                            'data-template-field' => 'includerolefields',
+                        ]);
+                        $mform->setType('includerolefields', PARAM_BOOL);
+                        $mform->hideIf('includerolefields', 'courseenrolments', 'notchecked');
+                        $mform->addHelpButton('includerolefields', 'includerolefields', 'tool_uploadusersplus');
+                    }
+
+                    if (empty($settings->hideoptionenroltimestart)) {
+                        $enroltimestartelement = $mform->addElement(
+                            'advcheckbox',
+                            'includeenroltimestart',
+                            get_string('includeenroltimestart', 'tool_uploadusersplus')
+                        );
+                        $enroltimestartelement->updateAttributes([
+                            'data-template-field' => 'includeenroltimestart',
+                        ]);
+                        $mform->setType('includeenroltimestart', PARAM_BOOL);
+                        $mform->hideIf('includeenroltimestart', 'courseenrolments', 'notchecked');
+                        $mform->addHelpButton('includeenroltimestart', 'includeenroltimestart', 'tool_uploadusersplus');
+                    }
+
+                    if (empty($settings->hideoptionenrolperiod)) {
+                        $enrolperiodelement = $mform->addElement(
+                            'advcheckbox',
+                            'includeenrolperiod',
+                            get_string('includeenrolperiod', 'tool_uploadusersplus')
+                        );
+                        $enrolperiodelement->updateAttributes([
+                            'data-template-field' => 'includeenrolperiod',
+                        ]);
+                        $mform->setType('includeenrolperiod', PARAM_BOOL);
+                        $mform->hideIf('includeenrolperiod', 'courseenrolments', 'notchecked');
+                        $mform->addHelpButton('includeenrolperiod', 'includeenrolperiod', 'tool_uploadusersplus');
+                    }
+
+                    if (empty($settings->hideoptionenrolstatus)) {
+                        $enrolstatuselement = $mform->addElement(
+                            'advcheckbox',
+                            'includeenrolstatus',
+                            get_string('includeenrolstatus', 'tool_uploadusersplus')
+                        );
+                        $enrolstatuselement->updateAttributes([
+                            'data-template-field' => 'includeenrolstatus',
+                        ]);
+                        $mform->setType('includeenrolstatus', PARAM_BOOL);
+                        $mform->hideIf('includeenrolstatus', 'courseenrolments', 'notchecked');
+                        $mform->addHelpButton('includeenrolstatus', 'includeenrolstatus', 'tool_uploadusersplus');
+                    }
                 }
 
                 if (empty($settings->hidecohortenrolmentsoption)) {
@@ -124,6 +184,7 @@ class main_form extends \moodleform {
                         'data-template-field' => 'cohortenrolments',
                     ]);
                     $mform->setType('cohortenrolments', PARAM_BOOL);
+                    $mform->addHelpButton('cohortenrolments', 'cohortenrolments', 'tool_uploadusersplus');
 
                     $numberofcohortselement = $mform->addElement(
                         'text',
@@ -136,6 +197,39 @@ class main_form extends \moodleform {
                     ]);
                     $mform->setType('numberofcohorts', PARAM_INT);
                     $mform->hideIf('numberofcohorts', 'cohortenrolments', 'notchecked');
+                    $mform->addHelpButton('numberofcohorts', 'numberofcohorts', 'tool_uploadusersplus');
+                }
+            }
+
+            if (empty($settings->hideoptiondeletedfield) || empty($settings->hideoptionsuspendedfield)) {
+                $mform->addElement('html', html_writer::tag('h5', get_string('deletesuspendheading', 'tool_uploadusersplus'), [
+                    'class' => 'mt-4 mb-3',
+                ]));
+
+                if (empty($settings->hideoptiondeletedfield)) {
+                    $deletedfieldelement = $mform->addElement(
+                        'advcheckbox',
+                        'includedeletedfield',
+                        get_string('includedeletedfield', 'tool_uploadusersplus')
+                    );
+                    $deletedfieldelement->updateAttributes([
+                        'data-template-field' => 'includedeletedfield',
+                    ]);
+                    $mform->setType('includedeletedfield', PARAM_BOOL);
+                    $mform->addHelpButton('includedeletedfield', 'includedeletedfield', 'tool_uploadusersplus');
+                }
+
+                if (empty($settings->hideoptionsuspendedfield)) {
+                    $suspendedfieldelement = $mform->addElement(
+                        'advcheckbox',
+                        'includesuspendedfield',
+                        get_string('includesuspendedfield', 'tool_uploadusersplus')
+                    );
+                    $suspendedfieldelement->updateAttributes([
+                        'data-template-field' => 'includesuspendedfield',
+                    ]);
+                    $mform->setType('includesuspendedfield', PARAM_BOOL);
+                    $mform->addHelpButton('includesuspendedfield', 'includesuspendedfield', 'tool_uploadusersplus');
                 }
             }
 

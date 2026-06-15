@@ -40,7 +40,13 @@ if (!\tool_uploadusersplus\local\helper::template_generation_enabled()) {
 $includecustomprofilefields = optional_param('includecustomprofilefields', 0, PARAM_BOOL);
 $includeoptionalfields = optional_param('includeoptionalfields', 0, PARAM_BOOL);
 $courseenrolments = optional_param('courseenrolments', 0, PARAM_BOOL);
+$includerolefields = optional_param('includerolefields', 0, PARAM_BOOL);
+$includeenroltimestart = optional_param('includeenroltimestart', 0, PARAM_BOOL);
+$includeenrolperiod = optional_param('includeenrolperiod', 0, PARAM_BOOL);
+$includeenrolstatus = optional_param('includeenrolstatus', 0, PARAM_BOOL);
 $cohortenrolments = optional_param('cohortenrolments', 0, PARAM_BOOL);
+$includedeletedfield = optional_param('includedeletedfield', 0, PARAM_BOOL);
+$includesuspendedfield = optional_param('includesuspendedfield', 0, PARAM_BOOL);
 $numberofcourses = optional_param('numberofcourses', 1, PARAM_INT);
 $numberofcohorts = optional_param('numberofcohorts', 1, PARAM_INT);
 
@@ -54,9 +60,27 @@ if (!empty($settings->hidecourseenrolmentsoption)) {
     $courseenrolments = 0;
     $numberofcourses = 1;
 }
+if (!$courseenrolments || !empty($settings->hideoptionroleenrolments)) {
+    $includerolefields = 0;
+}
+if (!$courseenrolments || !empty($settings->hideoptionenroltimestart)) {
+    $includeenroltimestart = 0;
+}
+if (!$courseenrolments || !empty($settings->hideoptionenrolperiod)) {
+    $includeenrolperiod = 0;
+}
+if (!$courseenrolments || !empty($settings->hideoptionenrolstatus)) {
+    $includeenrolstatus = 0;
+}
 if (!empty($settings->hidecohortenrolmentsoption)) {
     $cohortenrolments = 0;
     $numberofcohorts = 1;
+}
+if (!empty($settings->hideoptiondeletedfield)) {
+    $includedeletedfield = 0;
+}
+if (!empty($settings->hideoptionsuspendedfield)) {
+    $includesuspendedfield = 0;
 }
 
 if ($courseenrolments && !\tool_uploadusersplus\local\helper::is_valid_int_in_range($numberofcourses, 1, 99)) {
@@ -74,7 +98,13 @@ $headers = $generator->build_headers(
     max(1, $numberofcourses),
     max(1, $numberofcohorts),
     (bool)$courseenrolments,
-    (bool)$cohortenrolments
+    (bool)$cohortenrolments,
+    (bool)$includerolefields,
+    (bool)$includeenroltimestart,
+    (bool)$includeenrolperiod,
+    (bool)$includeenrolstatus,
+    (bool)$includedeletedfield,
+    (bool)$includesuspendedfield
 );
 $csv = $generator->build_csv($headers);
 $filename = \tool_uploadusersplus\local\helper::get_template_filename();

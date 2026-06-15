@@ -87,6 +87,49 @@ final class tool_uploadusersplus_helper_test extends advanced_testcase {
     }
 
     /**
+     * Test hidden template options and course-dependent fields are normalised server-side.
+     *
+     * @return void
+     */
+    public function test_normalise_form_data_forces_hidden_template_options_off(): void {
+        $this->resetAfterTest(true);
+        set_config('hideoptionroleenrolments', 1, 'tool_uploadusersplus');
+        set_config('hideoptiondeletedfield', 1, 'tool_uploadusersplus');
+
+        $data = (object)[
+            'includecustomprofilefields' => 1,
+            'includeoptionalfields' => 1,
+            'courseenrolments' => 0,
+            'numberofcourses' => 3,
+            'includerolefields' => 1,
+            'includeenroltimestart' => 1,
+            'includeenrolperiod' => 1,
+            'includeenrolstatus' => 1,
+            'cohortenrolments' => 0,
+            'numberofcohorts' => 2,
+            'includedeletedfield' => 1,
+            'includesuspendedfield' => 1,
+            'uploadtype' => \tool_uploadusersplus\local\helper::UPLOADTYPE_ADDNEW,
+            'newpasswords' => \tool_uploadusersplus\local\helper::NEWPASSWORDS_CREATE,
+            'existingpasswords' => \tool_uploadusersplus\local\helper::EXISTINGPASSWORDS_NOCHANGES,
+            'dryrun' => 1,
+            'reporttype' => \tool_uploadusersplus\local\helper::REPORT_SUMMARY,
+            'emailrecipient' => '',
+        ];
+
+        $normalised = \tool_uploadusersplus\local\helper::normalise_form_data($data);
+
+        $this->assertSame(0, $normalised->courseenrolments);
+        $this->assertSame(1, $normalised->numberofcourses);
+        $this->assertSame(0, $normalised->includerolefields);
+        $this->assertSame(0, $normalised->includeenroltimestart);
+        $this->assertSame(0, $normalised->includeenrolperiod);
+        $this->assertSame(0, $normalised->includeenrolstatus);
+        $this->assertSame(0, $normalised->includedeletedfield);
+        $this->assertSame(1, $normalised->includesuspendedfield);
+    }
+
+    /**
      * Test Pro-only admin settings are forced to free-version defaults.
      *
      * @return void
